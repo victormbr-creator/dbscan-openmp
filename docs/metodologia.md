@@ -1,10 +1,12 @@
 # Metodología y defensa técnica
 
-## Datos y diagnóstico
+## Generación de datos y reproducibilidad
 
-El proyecto se encontró en Documents/DBSCAN_Proyecto; el directorio inicialmente abierto en Codex era otro repositorio. Existían `.venv`, directorios vacíos, un test OpenMP y el material del profesor. El notebook local usa `np.savetxt("data/4000_data.csv", ...)`: depende del directorio de trabajo del kernel, no de la ubicación del notebook. No hay contador de ejecución y las gráficas guardadas no prueban ejecución local. No es posible reconstruir el cwd histórico del kernel con ese archivo. No se encontró el CSV en el proyecto. Si el kernel trabaja en material_curso, la subcarpeta data no existe y savetxt falla.
+Los conjuntos de datos se generan con `scripts/generar_datos.py`, utilizando `make_blobs` de scikit-learn y los parámetros del notebook del profesor: `centers=4`, `cluster_std=0.06`, `random_state=11` y `center_box=(0,1)`. Después se invierte el orden de las columnas, se aplica valor absoluto y se redondean las coordenadas a tres decimales. La semilla fija permite repetir la generación con las mismas versiones de las dependencias.
 
-El generador independiente resuelve la ruta a partir de `__file__`. Se ejecutó desde /private/tmp y verificó forma (4000,2), valores finitos e igualdad exacta después de guardar y volver a leer. Conserva make_blobs: centers=4, cluster_std=0.06, random_state=11, center_box=(0,1), inversión de columnas, valor absoluto y redondeo a tres decimales.
+Cada conjunto se guarda en `data/<N>_data.csv`, sin encabezado y con dos columnas numéricas correspondientes a las coordenadas x e y. La ruta de salida se determina a partir de la ubicación del script, por lo que no depende del directorio desde el que se ejecute. Tras guardar el archivo, el generador lo vuelve a leer y comprueba que contiene exactamente N filas y dos columnas, que todos los valores son finitos y que las coordenadas coinciden con las generadas.
+
+Para cada tamaño N, P0, P1 y P2 utilizan el mismo archivo de entrada. Se registran las versiones de software y los hashes de los datasets para identificar los datos utilizados en la evaluación.
 
 ## Algoritmo
 
@@ -12,7 +14,7 @@ Para cada punto se cuentan vecinos con dx²+dy² <= epsilon², incluido él mism
 
 P0 ejecuta ambos recorridos secuencialmente y se compila sin OpenMP. P1 usa un equipo OpenMP con dos bucles `omp for schedule(static)` sobre puntos. Static reduce la coordinación, pero puede sufrir desequilibrio si hay regiones con búsquedas muy diferentes.
 
-P2 reparte k bloques de índices [N*b/k,N*(b+1)/k), programados con `schedule(dynamic,1)`. Es distinta en la unidad de trabajo y su asignación: los hilos reciben bloques al terminar los anteriores. No crea subconjuntos espaciales aislados. Cada búsqueda consulta el conjunto global y no pierde vecinos entre bloques. Si k < hilos, habrá hilos sin bloque. Bloques pequeños mejoran balance pero añaden coordinación. No requiere reconciliación de etiquetas porque las búsquedas son globales.
+P2 reparte k bloques de índices [N*b/k,N*(b+1)/k), programados con `schedule(dynamic,1)`. Es distinta en la unidad de trabajo y su asignación: los hilos reciben bloques al terminar los anteriores. No crea subconjuntos espaciales aislados. Cada búsqueda consulta el conjunto global y no pierde vecinos entre bloques. Si k < hilos, habrá hilos sin bloque. Bloques pequeños mejoran balance pero añaden coordinación. No implementa una etapa separada de fusión de clasificaciones locales. Las búsquedas globales evitan perder vecinos y la barrera completa el estado compartido antes de la segunda fase. Esta composición de resultados por índices disjuntos responde a la pregunta sobre consistencia de la diapositiva 11, según el contenido proporcionado, que no exige una fusión posterior ni búsquedas exclusivamente locales; véase [alcance_p2.md](alcance_p2.md).
 
 Una condición de carrera ocurre cuando accesos simultáneos a memoria compartida, al menos uno de escritura, no están sincronizados. Aquí cada índice tiene un único escritor. Se usan bytes independientes, no vector<bool>. La barrera implícita al final del primer omp for garantiza que todos los cores están definidos antes de la fase dos. La segunda fase sólo lee ese vector y escribe su propia etiqueta. La salida se escribe al finalizar el equipo.
 

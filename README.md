@@ -4,7 +4,18 @@ Clasificación propia en C++17: `0` ruido, `1` core de primer orden, `2` core de
 
 ## Reproducir
 
-Desde `~/Documents/DBSCAN_Proyecto`:
+Requiere Git, Python 3.14 (versión de la reproducción comprobada) y LLVM/libomp con OpenMP. El Makefile usa LLVM de Homebrew en Apple Silicon. La reproducción se comprobó en el mismo Mac; no se afirma portabilidad a otros sistemas.
+
+Para una copia nueva del repositorio privado, con acceso autenticado:
+
+```sh
+git clone https://github.com/victormbr-creator/dbscan-openmp.git
+cd dbscan-openmp
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
+
+Desde la raíz del proyecto:
 
 ```sh
 .venv/bin/python scripts/generar_datos.py --n 4000
@@ -36,3 +47,16 @@ Consulta `docs/metodologia.md`, `docs/resultados.md` y `docs/uso_ia.md`. La conf
 ```sh
 .venv/bin/python scripts/auditar_experimentos.py results/benchmarks/e5129e76b440779f
 ```
+
+## Entrega documental
+
+[Informe PDF](output/pdf/informe_dbscan_openmp.pdf), [reproducción limpia](docs/reproduccion_limpia.md) y [justificación de P2 frente a la diapositiva 11](docs/alcance_p2.md).
+
+Para regenerar el PDF, instalar las dependencias documentales opcionales (no hacen falta para compilar o validar):
+
+```sh
+.venv/bin/python -m pip install -r requirements-docs.txt
+.venv/bin/python scripts/generar_informe.py
+```
+
+El PDF usa las mediciones conservadas y no vuelve a ejecutar los experimentos.
