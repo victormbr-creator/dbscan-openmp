@@ -1,0 +1,35 @@
+{
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "cpu_count": 10,
+  "threads": [
+    1,
+    5,
+    10,
+    20
+  ],
+  "sizes": [
+    20000,
+    80000,
+    140000,
+    200000
+  ],
+  "repetitions": 10,
+  "binaries": {
+    "serial": "ae3736ec23d99998f31422932bd7eb1f76f1e0a66916251f3ac50f8861091422",
+    "paralelo1": "f84dd60e2d1927faf63ae1d177a17cc4dacc9d4452d52ff585db92454c3ebe7f",
+    "paralelo2": "c8f862d9d004c51fb358f79399dca403671a458c0343f3f8659a7f85b7b8f8c2"
+  },
+  "environment": {
+    "OMP_PROC_BIND": null,
+    "OMP_PLACES": null,
+    "OMP_WAIT_POLICY": null
+  },
+  "epsilon": 0.03,
+  "min_samples": 10,
+  "datasets": {
+    "20000": "c8992228d010bc7d2c94a8913ccf7100ec7e390fe2fff16fc935c0ba11807086",
+    "80000": "de04236a2ba9ac73add67680fd30f835fb5f6574d672514858b94ef45a29028b",
+    "140000": "8794928170b46eb4688d082b114cc74cb8b6b8bfd1b3c1b507ed6658870306ed",
+    "200000": "cc34e37ce7a92b67f350c4cde8d3258e8418f8812dde4a4c8ead2041a4cc9fb6"
+  }
+}

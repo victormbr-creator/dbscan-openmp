@@ -1,0 +1,13 @@
+{
+  "Makefile": "bff5abf3b0b4e59dcc8b21eb347564d4cea7f1cd93abcddf9f1a728361b57f75",
+  "src/dbscan_common.hpp": "fcbb36dcc8d25a88f786c32e0241c05fb34180cd669252bde19492f8ebde5e7b",
+  "src/paralelo1.cpp": "5d0bdee0d4e6c46f7ca3ca36704dabb89c535f9720973c980e2f7936d581b835",
+  "src/paralelo2.cpp": "489659d510a45d76f325bf60350d86cf6486750105b04bbf2ea6a38f08affea6",
+  "src/serial.cpp": "77ffc210440913e54ed701adc31f93df89c4fe1ab3ecae865eb909abf5a8855d",
+  "src/test_openmp.cpp": "c1b39f26748bf0834908e897c519bc036990be5e91ab9309fcb2e4fda54a0e0a",
+  "scripts/auditar_experimentos.py": "909e702d3b5b2a4f1a548d626d698590b7d1991a354a3fafaec1f0db92a9a15b",
+  "scripts/experimentos.py": "fe38e30de7788bb83be755fd3dfd568d687481a9d24ba6dd1c63812b7c912cba",
+  "scripts/generar_datos.py": "775755fcf0e9cffb042a3ff58d6a7075e5634753b69a08fd795184fcdfb12312",
+  "scripts/graficas.py": "38cd3c3bfdb90e60544ad6759d6cc1d9f71e3a8b85da74afca6a09e2933d19f1",
+  "scripts/validar_resultados.py": "e82abeffe7d39c4a520efacd4519f870d7032dd701188c87572f30db5143d7e3"
+}
