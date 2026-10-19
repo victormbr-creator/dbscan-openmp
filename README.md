@@ -20,6 +20,7 @@ Desde la raíz del proyecto:
 ```sh
 .venv/bin/python scripts/generar_datos.py --n 4000
 make all
+mkdir -p results/serial results/paralelo1 results/paralelo2
 bin/serial data/4000_data.csv results/serial/4000_results.csv 0.03 10
 bin/paralelo1 data/4000_data.csv results/paralelo1/4000_results.csv 0.03 10 5
 bin/paralelo2 data/4000_data.csv results/paralelo2/4000_results.csv 0.03 10 5 16
@@ -30,7 +31,7 @@ bin/paralelo2 data/4000_data.csv results/paralelo2/4000_results.csv 0.03 10 5 16
 
 El último comando estima; **no ejecuta la matriz completa**. Después de autorizarla, añadir `--run`. El perfil individual selecciona N={20000,80000,140000,200000}, mitad de las configuraciones, con todos los hilos y particiones y diez repeticiones. Esta selección es una propuesta bajo la reducción permitida por el profesor. Sin `--individual`, se usan los ocho tamaños. `--sizes` permite elegir otros; `--repetitions` cambia las repeticiones para exploración, pero la entrega exige diez.
 
-Los programas aceptan `entrada salida epsilon min_samples [hilos] [k]`. Usar `-` como salida evita escribir CSV durante los experimentos. La salida estándar es un objeto JSON con tiempo en segundos, conteos y número real de hilos. La salida CSV no tiene encabezado: x,y,clase. Los directorios de salida deben existir.
+Los programas aceptan `entrada salida epsilon min_samples [hilos] [k]`. Usar `-` como salida evita escribir CSV durante los experimentos. La salida estándar es un objeto JSON con tiempo en segundos, conteos y número real de hilos. La salida CSV no tiene encabezado: x,y,clase. Los directorios de salida deben existir; el comando `mkdir -p` anterior los crea incluso en un clon nuevo. Los CSV de clasificación de `results/serial/`, `results/paralelo1/` y `results/paralelo2/` son regenerables y están excluidos de Git. Las mediciones y auditorías de `results/benchmarks/` se conservan versionadas.
 
 ```sh
 .venv/bin/python scripts/graficas.py results/benchmarks/ID/summary.csv
@@ -60,3 +61,5 @@ Para regenerar el PDF, instalar las dependencias documentales opcionales (no hac
 ```
 
 El PDF usa las mediciones conservadas y no vuelve a ejecutar los experimentos.
+
+Los hashes de fuentes guardados con los experimentos describen el estado de aquella campaña. Incluyen la prueba inicial `src/test_openmp.cpp`, retirada posteriormente de la entrega y recuperable en el historial de Git; no se alteran esos registros históricos.

@@ -6,3 +6,8 @@ material_curso/
 test_openmp
 data/*.csv
 *.tmp
+
+# Salidas de clasificación regenerables; conservar results/benchmarks/
+/results/serial/*.csv
+/results/paralelo1/*.csv
+/results/paralelo2/*.csv
