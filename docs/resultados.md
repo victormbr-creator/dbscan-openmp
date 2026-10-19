@@ -1,12 +1,12 @@
 # Evaluación experimental individual
 
-Matriz autorizada y ejecutada: **116 configuraciones, diez repeticiones cada una, 1160 mediciones válidas, cero fallas y cero configuraciones incompletas**. N={20000,80000,140000,200000}, T={1,5,10,20}, k={2,4,8,16,32,64}; epsilon=0.03, min_samples=10. Se conservan todas las configuraciones y mediciones, incluidas las menos favorables.
+En este informe reporto la campaña del 15 de octubre de 2026: **116 configuraciones, diez repeticiones cada una, 1160 mediciones válidas, cero fallas y cero configuraciones incompletas**. N={20000,80000,140000,200000}, T={1,5,10,20}, k={2,4,8,16,32,64}; epsilon=0.03, min_samples=10. Conservo todas las configuraciones y mediciones, incluidas las menos favorables.
 
 Archivos: [tiempos individuales](../results/benchmarks/e5129e76b440779f/raw.csv), [resumen](../results/benchmarks/e5129e76b440779f/summary.csv), [metadatos](../results/benchmarks/e5129e76b440779f/metadata.json), [validación](../results/benchmarks/e5129e76b440779f/validation.csv).
 
 ## Mejores medias observadas por versión y tamaño
 
-La selección de la mejor configuración es descriptiva. Cada media usa las diez repeticiones; no se eliminaron mediciones. La desviación estándar describe variabilidad, no un intervalo de confianza.
+Seleccioné la mejor configuración de cada versión y tamaño con un fin descriptivo. Para cada media utilicé las diez repeticiones, sin eliminar mediciones. La desviación estándar describe variabilidad, no un intervalo de confianza.
 
 | N | Versión | Hilos | k | Media (ms) | Desv. estándar (ms) | Speedup | Eficiencia |
 |---:|---|---:|---:|---:|---:|---:|---:|
@@ -25,17 +25,17 @@ La selección de la mejor configuración es descriptiva. Cada media usa las diez
 
 ## Interpretación
 
-Ambas versiones paralelas superaron el requisito de speedup 1.5 en los cuatro tamaños. P2 con 10 hilos y k=64 obtuvo la mejor media en todos ellos: de 5.65× a 6.24×. En 200000 puntos, P0 tomó 104.34 ms, la mejor P1 19.03 ms y la mejor P2 16.73 ms. P2 redujo el tiempo frente a la mejor P1 aproximadamente un 12.1%.
+Observé que ambas versiones paralelas superaron el requisito de speedup 1.5 en los cuatro tamaños. P2 con 10 hilos y k=64 obtuvo la mejor media en todos ellos: de 5.65× a 6.24×. En 200000 puntos, P0 tomó 104.34 ms, la mejor P1 19.03 ms y la mejor P2 16.73 ms. P2 redujo el tiempo frente a la mejor P1 aproximadamente un 12.1%.
 
-P2 con k=2 se mantiene cerca de 2× al añadir hilos, coherente con su límite de dos bloques disponibles por fase. Con k=32 o 64 hay más bloques para repartir; la mejora es compatible con mejor balance, aunque no se midió el tiempo por hilo para atribuir causalidad definitiva.
+P2 con k=2 se mantiene cerca de 2× al añadir hilos, coherente con su límite de dos bloques disponibles por fase. Con k=32 o 64 hay más bloques para repartir; interpreto la mejora como compatible con mejor balance, aunque no medí el tiempo por hilo para atribuirle causalidad definitiva.
 
 P1 alcanzó su mejor media con 20 hilos en los tres tamaños mayores. Esto no implica disponer de 20 núcleos: son 20 hilos sobre 10 procesadores lógicos. P2 alcanzó sus mejores medias con 10 hilos; sobresuscribir a 20 no mejoró esos resultados. La eficiencia de P2 a 200000 puntos fue 62.35% con 10 hilos, frente a 27.41% de la mejor P1 con 20.
 
-El tiempo crece aproximadamente con N en estos datos densos porque la búsqueda se detiene al alcanzar min_samples. El peor caso del algoritmo sigue siendo O(N²); no debe generalizarse esta tendencia a puntos aislados o parámetros diferentes. La estimación previa N² de 7.60 minutos era orientativa, no una medición del tiempo total.
+El tiempo crece aproximadamente con N en estos datos densos porque la búsqueda se detiene al alcanzar min_samples. El peor caso del algoritmo sigue siendo O(N²); no generalizo esta tendencia a puntos aislados o parámetros diferentes. La estimación previa N² de 7.60 minutos era orientativa, no una medición del tiempo total.
 
 ## Verificación
 
-Antes de medir se repitieron los ocho casos de referencia con scikit-learn. Después de medir, scripts/auditar_experimentos.py verificó hashes de los ejecutables y datasets, tiempos positivos y finitos, diez repeticiones distintas por configuración, medias, speedup y eficiencia. Reejecutó las 116 configuraciones con salida CSV y comprobó igualdad exacta frente a P0 en cada tamaño, además de coordenadas originales y número efectivo de hilos. Esas ejecuciones de auditoría no forman parte de los tiempos experimentales. La referencia externa sklearn corresponde a los ocho casos documentados; los cuatro datasets grandes se compararon contra P0.
+Antes de medir repetí los ocho casos de referencia con scikit-learn. Después utilicé scripts/auditar_experimentos.py para verificar hashes de ejecutables y datasets, tiempos positivos y finitos, diez repeticiones distintas por configuración, medias, speedup y eficiencia. Mediante ese script reejecuté las 116 configuraciones con salida CSV y comprobé igualdad exacta frente a P0 en cada tamaño, además de coordenadas originales y número efectivo de hilos. Excluí esas ejecuciones de auditoría de los tiempos experimentales. Utilicé sklearn como referencia externa en los ocho casos documentados y comparé los cuatro datasets grandes contra P0.
 
 | N | Core | Segundo orden | Ruido |
 |---:|---:|---:|---:|
@@ -60,6 +60,6 @@ Antes de medir se repitieron los ocho casos de referencia con scikit-learn. Desp
 .venv/bin/python scripts/graficas.py results/benchmarks/e5129e76b440779f/summary.csv
 ```
 
-La primera orden reanuda resultados compatibles sin repetir mediciones completas. Para una campaña nueva usar --force. No se cambió el código C++ ni se recompilaron binarios durante esta campaña.
+Con la primera orden reanudo resultados compatibles sin repetir mediciones completas. Para una campaña nueva añado --force. Durante la campaña reportada mantuve el mismo código C++ y los mismos ejecutables, sin recompilarlos.
 
-El piloto anterior y su registro de fases se conservan en [resultados_piloto.md](resultados_piloto.md). El siguiente paso es revisar esta evaluación y practicar la explicación del algoritmo y de las decisiones de paralelización.
+Conservo el piloto anterior y su registro de fases en [resultados_piloto.md](resultados_piloto.md). Presento ambos registros por separado para distinguir las mediciones preliminares de esta evaluación.

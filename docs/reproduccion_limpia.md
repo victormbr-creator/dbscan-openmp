@@ -4,7 +4,7 @@ Fecha: 15 de octubre de 2026. Repositorio remoto privado: https://github.com/vic
 
 Commit clonado y probado: `b6d894600f97fc5e866fb451b361a09857d27913`.
 
-Directorio independiente: `/private/tmp/dbscan-repro-20261015`. Antes de ejecutar, no existían `data/` ni `bin/` en el clon. Se creó un entorno `.venv` nuevo; no se copió el entorno, los datasets ni los ejecutables del proyecto original. El clon sí contiene los resultados históricos versionados, que no son entradas de la validación.
+Directorio independiente: `/private/tmp/dbscan-repro-20261015`. Antes de ejecutar comprobé que no existían `data/` ni `bin/` en el clon. Creé un entorno `.venv` nuevo, sin copiar el entorno, los datasets ni los ejecutables del proyecto original. El clon sí contiene los resultados históricos versionados, que no son entradas de la validación.
 
 ## Comandos ejecutados
 
@@ -22,7 +22,7 @@ make all
 
 ## Resultados observados
 
-- Python 3.14.5; NumPy 2.5.4, Matplotlib 3.11.2 y scikit-learn 1.9.1 instalados desde el índice de paquetes. Dependencias transitivas registradas en `requirements-repro.txt`.
+- Python 3.14.5; NumPy 2.5.4, Matplotlib 3.11.2 y scikit-learn 1.9.1 instalados desde el índice de paquetes. Registré las dependencias transitivas en `requirements-repro.txt`.
 - Compilación de P0/P1/P2 con el Makefile: correcta, sin advertencias en la salida observada.
 - Generación: exactamente 4000 filas y dos columnas; primeros puntos (0.415,0.446), (0.470,0.007), (0.784,0.500), (0.406,0.451), (0.466,0.452).
 - Validación: ocho casos y 120 ejecuciones correctas. En datos del profesor: 3829 core, 112 segundo orden y 59 ruido.
@@ -41,8 +41,8 @@ make all
 
 ## Límites de esta comprobación
 
-La prueba se hizo en el mismo Mac, usando LLVM/libomp y Python del sistema. Comprueba independencia de archivos locales previos, no portabilidad a otro sistema operativo ni instalación desde cero de dependencias del sistema. No se volvió a ejecutar la matriz de rendimiento completa: las 1160 mediciones originales permanecen intactas.
+Realicé la prueba en el mismo Mac con LLVM/libomp y Python del sistema. Comprobé independencia de archivos locales previos, no portabilidad a otro sistema operativo ni instalación desde cero de dependencias del sistema. No repetí la matriz de rendimiento completa durante esta comprobación; conservé intactas las 1160 mediciones originales.
 
-Los primeros intentos de red fueron bloqueados por el sandbox; al autorizar acceso de red se completaron clonación y descarga. Las advertencias sobre la caché de pip fueron de permisos y no impidieron la instalación. No se modificaron permisos del sistema ni se instaló otro compilador.
+Realicé esta comprobación con asistencia de Codex, como declaro en [uso_ia.md](uso_ia.md). El registro corresponde al commit indicado, no a una nueva campaña de rendimiento. Los cambios posteriores de documentación y formato no sustituyen esta evidencia histórica.
 
-Las correcciones posteriores son documentales y añaden el generador PDF; los algoritmos y las dependencias de cálculo permanecen iguales al commit probado. La generación PDF utiliza ReportLab como dependencia opcional, separada de la validación C++/OpenMP.
+Para generar el PDF utilizo ReportLab como dependencia opcional, separada de la compilación y validación C++/OpenMP.

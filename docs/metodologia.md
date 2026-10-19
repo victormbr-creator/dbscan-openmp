@@ -1,37 +1,51 @@
-# Metodología y defensa técnica
+# Metodología
 
 ## Generación de datos y reproducibilidad
 
-Los conjuntos de datos se generan con `scripts/generar_datos.py`, utilizando `make_blobs` de scikit-learn y los parámetros del notebook del profesor: `centers=4`, `cluster_std=0.06`, `random_state=11` y `center_box=(0,1)`. Después se invierte el orden de las columnas, se aplica valor absoluto y se redondean las coordenadas a tres decimales. La semilla fija permite repetir la generación con las mismas versiones de las dependencias.
+Genero los conjuntos de datos con `scripts/generar_datos.py`, utilizando `make_blobs` de scikit-learn y los parámetros del notebook del profesor: `centers=4`, `cluster_std=0.06`, `random_state=11` y `center_box=(0,1)`. Después invierto el orden de las columnas, aplico valor absoluto y redondeo las coordenadas a tres decimales. Mantengo una semilla fija para repetir la generación con las mismas versiones de las dependencias.
 
-Cada conjunto se guarda en `data/<N>_data.csv`, sin encabezado y con dos columnas numéricas correspondientes a las coordenadas x e y. La ruta de salida se determina a partir de la ubicación del script, por lo que no depende del directorio desde el que se ejecute. Tras guardar el archivo, el generador lo vuelve a leer y comprueba que contiene exactamente N filas y dos columnas, que todos los valores son finitos y que las coordenadas coinciden con las generadas.
+Guardo cada conjunto en `data/<N>_data.csv`, sin encabezado y con dos columnas numéricas correspondientes a x e y. Determino la ruta de salida a partir de la ubicación del script, por lo que no depende del directorio de ejecución. Tras guardar el archivo, lo vuelvo a leer y compruebo que contiene exactamente N filas y dos columnas, que todos los valores son finitos y que las coordenadas coinciden con las generadas.
 
-Para cada tamaño N, P0, P1 y P2 utilizan el mismo archivo de entrada. Se registran las versiones de software y los hashes de los datasets para identificar los datos utilizados en la evaluación.
+Para cada tamaño N utilizo el mismo archivo en P0, P1 y P2. Registro las versiones de software y los hashes de los datasets para identificar los datos de la evaluación.
 
 ## Algoritmo
 
-Para cada punto se cuentan vecinos con dx²+dy² <= epsilon², incluido él mismo. Al alcanzar min_samples se marca core y se detiene la búsqueda. Esto conserva la clasificación, aunque no obtiene el número total de vecinos. Una segunda fase busca un core vecino para cada no-core: si existe es segundo orden (borde); si no, ruido. Los bordes no propagan la condición de core. Todas las versiones aplican las mismas optimizaciones, con memoria O(N) y peor caso O(N²). No hay matriz de distancias ni caché exclusiva.
+Para cada punto cuento vecinos con dx²+dy² <= epsilon², incluido el propio punto. Cuando alcanzo `min_samples`, marco el punto como core y detengo la búsqueda. Así determino si alcanza el umbral, aunque no obtengo necesariamente el número total de vecinos. En la segunda fase busco un core vecino para cada punto no-core: si existe, lo clasifico como segundo orden o borde; de lo contrario, lo mantengo como ruido. No permito que los bordes propaguen la condición de core.
 
-P0 ejecuta ambos recorridos secuencialmente y se compila sin OpenMP. P1 usa un equipo OpenMP con dos bucles `omp for schedule(static)` sobre puntos. Static reduce la coordinación, pero puede sufrir desequilibrio si hay regiones con búsquedas muy diferentes.
+Aplico las mismas optimizaciones en las tres versiones. Utilizo memoria O(N), sin matriz de distancias ni caché exclusiva de una versión, y conservo una complejidad temporal O(N²) en el peor caso.
 
-P2 reparte k bloques de índices [N*b/k,N*(b+1)/k), programados con `schedule(dynamic,1)`. Es distinta en la unidad de trabajo y su asignación: los hilos reciben bloques al terminar los anteriores. No crea subconjuntos espaciales aislados. Cada búsqueda consulta el conjunto global y no pierde vecinos entre bloques. Si k < hilos, habrá hilos sin bloque. Bloques pequeños mejoran balance pero añaden coordinación. No implementa una etapa separada de fusión de clasificaciones locales. Las búsquedas globales evitan perder vecinos y la barrera completa el estado compartido antes de la segunda fase. Esta composición de resultados por índices disjuntos responde a la pregunta sobre consistencia de la diapositiva 11, según el contenido proporcionado, que no exige una fusión posterior ni búsquedas exclusivamente locales; véase [alcance_p2.md](alcance_p2.md).
+En P0 ejecuto ambos recorridos secuencialmente y compilo sin OpenMP. En P1 utilizo un equipo OpenMP con dos bucles `omp for schedule(static)` sobre puntos. Elegí el reparto estático para reducir coordinación, aunque puede presentar desequilibrio cuando los puntos requieren búsquedas de distinta duración.
 
-Una condición de carrera ocurre cuando accesos simultáneos a memoria compartida, al menos uno de escritura, no están sincronizados. Aquí cada índice tiene un único escritor. Se usan bytes independientes, no vector<bool>. La barrera implícita al final del primer omp for garantiza que todos los cores están definidos antes de la fase dos. La segunda fase sólo lee ese vector y escribe su propia etiqueta. La salida se escribe al finalizar el equipo.
+En P2 reparto k bloques de índices [floor(N*b/k),floor(N*(b+1)/k)) mediante `schedule(dynamic,1)`. Los hilos reciben nuevos bloques conforme terminan los anteriores. Cada búsqueda consulta el conjunto global, por lo que conserva vecinos de otros bloques. Si k es menor que la cantidad de hilos, habrá hilos sin bloques que procesar. Los bloques pequeños ofrecen más oportunidades de balance a costa de coordinación adicional.
+
+Integro los resultados mediante posiciones disjuntas de los vectores compartidos. No implemento una fusión posterior de clasificaciones locales: las búsquedas globales evitan perder vecinos y la barrera completa el estado compartido antes de la segunda fase. Justifico esta decisión frente a la diapositiva 11 en [alcance_p2.md](alcance_p2.md).
+
+## Sincronización y condiciones de carrera
+
+Una condición de carrera aparece cuando hay accesos simultáneos no sincronizados a la misma posición de memoria y al menos uno escribe. En mi implementación asigno un único escritor a cada índice. Utilizo bytes independientes, no `vector<bool>`, y no redimensiono los vectores durante el procesamiento paralelo.
+
+Conservo la barrera implícita al final del primer `omp for` para garantizar que todos los cores estén definidos antes de la segunda fase. En esa fase sólo leo el vector core y escribo la etiqueta correspondiente a cada punto. Guardo la salida al finalizar la región paralela.
 
 ## Validación y precisión
 
-Se comparan las tres clases con DBSCAN de scikit-learn, usando core_sample_indices_ y las etiquetas -1. Se fija algorithm='kd_tree'. La primera prueba con 'brute' discrepó en cinco puntos del dataset de 4000; kd_tree coincidió con las distancias directas del código. Los métodos pueden diferir por redondeo flotante cerca de epsilon; no se exige identidad entre todos los backends de sklearn ni se añadió tolerancia. Se desactiva contracción flotante con -ffp-contract=off y no se usa fast-math.
+Comparo las tres clases con DBSCAN de scikit-learn. Utilizo `core_sample_indices_` para identificar cores y las etiquetas -1 para identificar ruido; los no-core restantes son borde. Fijo `algorithm='kd_tree'` como referencia. En la primera prueba con `brute` observé cinco discrepancias en el dataset de 4000 puntos; con `kd_tree` obtuve coincidencia. Los métodos pueden diferir por redondeo flotante cerca de epsilon. Documenté esa diferencia y no añadí tolerancias arbitrarias ni supuse identidad entre todos los backends.
 
-Ocho casos: profesor, duplicados, distancia epsilon exacta (representable), aislados, densos, un punto, min_samples>N y vecinos entre bloques. Cada caso prueba P0, P1 con 1 y 5 hilos y P2 con 1 y 5 hilos y k={2,4,8,16,32,64}; 120 ejecuciones en total. Se comparan coordenadas y clases punto por punto y el número efectivo de hilos.
+Compilo con `-ffp-contract=off` para desactivar la contracción de operaciones flotantes y no utilizo fast-math. Esta opción no convierte los cálculos en aritmética decimal exacta.
 
-## Medición
+Verifiqué ocho casos: datos del profesor, duplicados, distancia epsilon exacta representable, aislados, densos, un punto, `min_samples>N` y vecinos entre bloques. Para cada caso ejecuté P0, P1 con 1 y 5 hilos y P2 con 1 y 5 hilos y k={2,4,8,16,32,64}: 120 ejecuciones. Comparé coordenadas y clases punto por punto y comprobé el número efectivo de hilos.
 
-Apple M5, 10 procesadores lógicos y 10 físicos, 25769803776 bytes (24 GiB), arm64; macOS 26.5.2 build 25F84; Homebrew clang 23.1.3. Python de .venv; NumPy 2.5.4, scikit-learn 1.9.1, Matplotlib 3.11.2. Opciones comunes -std=c++17 -O3 -ffp-contract=off; P1/P2 añaden -fopenmp.
+## Entorno de medición
 
-T={1,5,10,20}; en equipos impares se usa floor(V/2), mínimo 1, eliminando duplicados. 20 hilos implica sobresuscripción. El equipo heterogéneo, temperatura y otras cargas pueden cambiar los resultados; no se presupone aceleración lineal.
+Utilicé un Apple M5 con 10 procesadores lógicos y 10 físicos, 25769803776 bytes de memoria (24 GiB), arquitectura arm64 y macOS 26.5.2, build 25F84. Compilé con Homebrew clang 23.1.3. En el entorno Python utilicé NumPy 2.5.4, scikit-learn 1.9.1 y Matplotlib 3.11.2. Las opciones comunes fueron `-std=c++17 -O3 -ffp-contract=off`; para P1 y P2 añadí `-fopenmp`.
 
-steady_clock mide asignación e inicialización de etiquetas, ambas fases, creación del equipo y sincronizaciones. Excluye lectura, conteo final de categorías, escritura y emisión JSON. Un calentamiento por configuración se descarta. Las diez repeticiones se intercalan con orden pseudoaleatorio de semilla 11. Cada proceso crea su equipo: el costo de OpenMP está incluido.
+Evalué T={1,5,10,20}. Para equipos con V impar, el script calcula floor(V/2), con mínimo 1 y sin duplicados. En mi equipo, 20 hilos implican sobresuscripción. Considero que la carga del sistema y la temperatura pueden afectar el rendimiento y no supongo aceleración lineal.
 
-Speedup=media(P0)/media(Px), eficiencia=speedup/hilos. Se conservan datos crudos, desviación estándar, parámetros, hashes y entorno OpenMP. La estimación usa un piloto real de 20000 y escala por N² sin asumir ganancia paralela; es orientativa, no una garantía, porque la densidad y la parada temprana cambian el trabajo real. La generación y validación agregan tiempo aparte. La matriz individual reduce los tamaños a cuatro, conserva las seis particiones y todos los hilos: 116 configuraciones, 1160 mediciones, más calentamientos.
+## Diseño experimental y tiempos
 
-La matriz individual fue autorizada y ejecutada. La auditoría posterior verificó todas las configuraciones contra P0 en cada dataset; detalles y hashes de salida en validation.csv. Los tiempos de auditoría quedan fuera de la evaluación. Las gráficas separan paneles por N o por hilos, conservando todas las configuraciones.
+En modalidad individual evalué N={20000,80000,140000,200000}. Para cada tamaño ejecuté una configuración P0, cuatro P1 y 24 P2, combinando los cuatro números de hilos con k={2,4,8,16,32,64}. Obtuve 29 configuraciones por tamaño, 116 en total y 1160 mediciones al repetir cada una diez veces.
+
+Con `steady_clock` mido la asignación e inicialización de etiquetas, ambas fases, la entrada al equipo OpenMP y las sincronizaciones. Excluyo lectura, conteo final de categorías, escritura y salida JSON. Descarto un calentamiento por configuración e intercalo las diez repeticiones en orden pseudoaleatorio con semilla 11. Cada medición utiliza un proceso nuevo e incluye el costo de entrada al equipo OpenMP.
+
+Calculo speedup=media(P0)/media(Px) y eficiencia=speedup/hilos. Conservo tiempos crudos, desviaciones estándar, parámetros, hashes y variables de entorno OpenMP. Antes de ejecutar la matriz estimo su duración con un piloto de 20000 puntos y escalamiento N² sin asumir ganancia paralela. Trato esa estimación como orientativa: la densidad y la parada temprana cambian el trabajo real, y la generación y validación agregan tiempo aparte.
+
+Después de la campaña audité todas las configuraciones contra P0 en cada dataset. Registro los detalles y hashes de salida en `validation.csv`. Excluyo esas ejecuciones de auditoría de los tiempos experimentales y presento gráficas por tamaño o número de hilos, conservando todas las configuraciones.

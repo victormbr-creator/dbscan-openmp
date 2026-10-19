@@ -1,25 +1,25 @@
 # Alcance e interpretación de P2
 
-## Implementación que se entrega
+## Implementación
 
-P2 divide los índices en k bloques disjuntos: [floor(N*b/k), floor(N*(b+1)/k)). Cada bloque consulta el conjunto completo para decidir sus resultados, y escribe sólo las posiciones que le corresponden en los vectores compartidos. Los bloques se asignan dinámicamente a los hilos.
+En P2 divido los índices en k bloques disjuntos: [floor(N*b/k),floor(N*(b+1)/k)). Cada bloque consulta el conjunto completo para decidir sus resultados y escribe únicamente las posiciones que le corresponden en los vectores compartidos. Asigno los bloques dinámicamente a los hilos mediante OpenMP.
 
-Después de la primera fase, una barrera implícita garantiza que el vector global core está completo. La segunda fase consulta ese vector global para clasificar bordes y ruido. Un punto puede tener vecinos en cualquier bloque. La unión de las contribuciones se realiza mediante posiciones disjuntas del vector compartido; no hay etiquetas locales contradictorias que reconciliar.
+Después de la primera fase conservo una barrera implícita para garantizar que el vector global core esté completo. En la segunda fase consulto ese vector para clasificar bordes y ruido. Un punto puede tener vecinos en cualquier bloque. Integro las contribuciones mediante posiciones disjuntas del vector compartido, sin generar etiquetas locales contradictorias.
 
-**No existe una fase independiente de fusión de resultados locales. La barrera sincroniza; no es un algoritmo de fusión de clústeres.** Tampoco se asignan identificadores de clúster.
+No implemento una fase independiente de fusión de resultados locales. La barrera sincroniza las fases; no es un algoritmo de fusión de clústeres. Tampoco asigno identificadores de clúster.
 
 ## Correspondencia con la diapositiva 11
 
-Según el contenido de la diapositiva 11 proporcionado por el estudiante, se solicitan tres implementaciones: serial, P1 sobre el conjunto completo y P2 con división en k partes procesadas en paralelo. Se pregunta cómo unir los resultados para mantener consistencia, sin imponer un algoritmo concreto de reconciliación ni exigir búsquedas exclusivamente locales.
+Interpreto la diapositiva 11 como el requisito de desarrollar tres implementaciones: una serial, P1 sobre el conjunto completo y P2 con división en k partes procesadas en paralelo. La pregunta sobre cómo unir los resultados para mantener consistencia no impone un algoritmo concreto de reconciliación ni exige búsquedas exclusivamente locales.
 
-La implementación responde a esos requisitos mediante una partición lógica de las filas en k bloques, planificación paralela dinámica y composición directa de los resultados en posiciones disjuntas del vector global. Las búsquedas globales conservan los vecinos entre bloques y la barrera asegura que todos los cores estén disponibles antes de clasificar bordes. La equivalencia contra P0 se comprobó en las 116 configuraciones experimentales.
+Respondo a ese planteamiento mediante partición lógica de filas, planificación dinámica y composición directa de los resultados por índices exclusivos. Las consultas globales conservan los vecinos entre bloques y la barrera asegura que todos los cores estén disponibles antes de clasificar bordes. Comprobé equivalencia contra P0 en las 116 configuraciones experimentales.
 
-Por ello, esta solución es técnicamente consistente con el enunciado proporcionado. No necesita copiar los bloques en matrices físicas ni generar clasificaciones locales incompletas para después corregirlas. La integración consiste en reunir contribuciones por índices exclusivos; la barrera sólo sincroniza las fases. Esta justificación no equivale a una aprobación expresa del profesor.
+Por ello considero que mi solución es técnicamente consistente con el enunciado. No necesito copiar los bloques en matrices físicas ni generar clasificaciones locales incompletas para corregirlas después. Presento esta explicación como mi justificación técnica, no como una aprobación expresa del profesor.
 
-P1 y P2 comparten las reglas de clasificación y las búsquedas globales. Su diferencia está en la distribución: P1 reparte puntos estáticamente; P2 reparte k bloques dinámicamente. Si se añadiera el requisito de búsquedas exclusivamente locales y una fusión posterior, haría falta una variante distinta, descrita a continuación.
+En P1 y P2 conservo las mismas reglas de clasificación y consultas globales. Cambio la distribución del trabajo: P1 reparte puntos estáticamente y P2 reparte k bloques dinámicamente. Si se añadiera un requisito de búsquedas exclusivamente locales y fusión posterior, necesitaría una variante distinta.
 
-## Alternativa si se exige unión explícita
+## Alternativa con unión explícita
 
-Para cada punto i y bloque b se podría calcular una contribución parcial c(i,b), contando sus vecinos dentro del bloque. La suma sobre b decide si i es core. Una vez conocidos todos los cores, cada bloque aporta si contiene algún core vecino de i; una reducción OR decide si i es borde. El orden debe conservar una barrera entre la decisión global de cores y la búsqueda de bordes.
+Como alternativa podría calcular, para cada punto i y bloque b, una contribución c(i,b) que cuente sus vecinos en ese bloque. Sumaría las contribuciones para decidir si i es core. Con todos los cores conocidos, cada bloque aportaría si contiene algún core vecino de i; combinaría esas respuestas mediante OR para decidir borde o ruido. Mantendría una barrera entre la decisión global de cores y la búsqueda de bordes.
 
-Esta alternativa combina contribuciones de vecindarios, no clústeres. Cambia el trabajo realizado y puede perder parte de la ventaja de parada temprana. Necesita implementación, validación y nuevas mediciones comparables. No está implementada ni forma parte de los speedups publicados. No se sustituyó P2 sin confirmar la exigencia original.
+Esta alternativa combina contribuciones de vecindarios, no clústeres. Cambiaría el trabajo realizado y podría reducir la ventaja de la parada temprana. No la implementé ni le atribuyo los speedups reportados; requeriría validación y nuevas mediciones comparables.
