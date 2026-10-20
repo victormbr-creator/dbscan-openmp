@@ -2,7 +2,7 @@
 
 Mi objetivo es leer el archivo recibido, ejecutar P0, P1 y P2 con los mismos parámetros y comprobar la clasificación de sus puntos. El número de filas no está fijado en C++: el programa lo obtiene al leer el CSV.
 
-Trabajo desde `~/Documents/DBSCAN_Proyecto` y ejecuto los pasos en orden. Si un comando falla, reviso el error antes de seguir.
+Trabajo desde `~/Documents/DBSCAN_Proyecto`
 
 ## 1. Recibo el archivo y confirmo los parámetros
 
