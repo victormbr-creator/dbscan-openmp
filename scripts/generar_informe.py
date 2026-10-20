@@ -1,5 +1,8 @@
 """Informe de entrega desde los CSV experimentales, sin recalcular mediciones."""
 
+# Uso Path para rutas y csv para resultados. ReportLab compone el PDF con
+# párrafos, tablas e imágenes. escape protege el texto de celdas frente a
+# caracteres que Paragraph podría interpretar como etiquetas.
 from pathlib import Path
 import argparse, csv, json
 from xml.sax.saxutils import escape
@@ -18,12 +21,22 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
 
 
+# Genero el informe desde una campaña concreta ya guardada; aquí no ejecuto
+# DBSCAN ni nuevos experimentos. root indica la carpeta principal del proyecto.
 def main(root):
+    # Esta ruta fija la campaña original del informe. Las corridas posteriores
+    # no se incorporan automáticamente al PDF.
     folder = root / "results/benchmarks/e5129e76b440779f"
+    # summary.csv aporta las métricas; validation.csv aporta las comprobaciones
+    # y conteos por configuración. Los campos CSV se leen como cadenas.
     rows = list(csv.DictReader((folder / "summary.csv").open()))
     checks = list(csv.DictReader((folder / "validation.csv").open()))
+    # Defino el archivo de salida y creo sus carpetas si faltan; build lo reemplaza.
     out = root / "output/pdf/informe_dbscan_openmp.pdf"
     out.parent.mkdir(parents=True, exist_ok=True)
+    # Parto de estilos de ReportLab y personalizo tipografía, colores y espaciado.
+    # fontSize controla la letra; leading la distancia entre líneas; spaceAfter
+    # el espacio tras el párrafo. Las medidas se expresan en puntos (1/72 de pulgada).
     styles = getSampleStyleSheet()
     styles.add(
         ParagraphStyle(
@@ -47,19 +60,30 @@ def main(root):
     styles["Heading1"].spaceAfter = 14
     styles["Heading2"].textColor = colors.HexColor("#37637A")
     styles.add(ParagraphStyle(name="SmallCell", fontName="Helvetica", fontSize=8, leading=10))
+    # story es una lista ordenada de elementos de maquetación; ReportLab
+    # los distribuye en las páginas al llamar a build al final.
     story = []
 
+    # Este auxiliar agrega un párrafo con el estilo indicado o BodyText por defecto.
+    # Paragraph interpreta etiquetas simples como <br/> para saltos de línea.
     def p(text, style="BodyText"):
         story.append(Paragraph(text, styles[style]))
 
+    # Reutilizo p para agregar un encabezado principal.
     def heading(text):
         p(text, "Heading1")
 
+    # Inserto un salto de página explícito para separar secciones.
     def page():
         story.append(PageBreak())
 
+    # Convierto cada celda a texto y escapo caracteres especiales. La comprensión
+    # anidada recorre filas y celdas; Paragraph permite ajustar el texto al ancho.
     def table(data, widths=None):
         data = [[Paragraph(escape(str(c)), styles["SmallCell"]) for c in row] for row in data]
+        # widths fija anchos de columnas; repeatRows=1 repite el encabezado si la tabla
+        # ocupa varias páginas. En TableStyle las coordenadas son (columna,fila);
+        # -1 significa la última columna o fila.
         t = Table(data, colWidths=widths, repeatRows=1, hAlign="LEFT")
         t.setStyle(
             TableStyle(
@@ -73,11 +97,17 @@ def main(root):
                 ]
             )
         )
+        # extend agrega dos elementos: la tabla y un espacio vertical de 12 puntos.
         story.extend([t, Spacer(1, 12)])
 
+    # Incorporo un PNG existente de la campaña con tamaño fijo; no genero
+    # las gráficas aquí. Esos archivos los produce graficas.py.
     def figure(name):
         story.append(Image(str(folder / name), width=495, height=330))
 
+    # Portada: agrego título, fecha, alcance y resumen. Gran parte de la narrativa
+    # y algunos resultados destacados son texto fijo revisado para esta campaña;
+    # no se actualizan solos al cambiar los CSV.
     p("CÓMPUTO PARALELO Y EN LA NUBE", "Sub")
     p("DBSCAN paralelo<br/>para detección de ruido", "TitleCustom")
     p("Descripción técnica y evaluación experimental individual", "Sub")
@@ -111,6 +141,8 @@ def main(root):
         "Repositorio privado: github.com/victormbr-creator/dbscan-openmp. Los CSV de respaldo están en results/benchmarks/e5129e76b440779f/."
     )
     page()
+    # Sección 1: explico clasificación, complejidad y parámetros del generador.
+    # Las llamadas p/table agregan contenido; no ejecutan el algoritmo descrito.
     heading("1. Algoritmo y datos")
     p(
         "El vecindario de un punto contiene los puntos a distancia menor o igual que epsilon, incluido el propio punto. Un punto es core si su vecindario contiene al menos min_samples observaciones. Un no-core es de segundo orden si tiene algún core vecino; de lo contrario es ruido."
@@ -144,6 +176,7 @@ def main(root):
         "Comparto la lectura y las reglas en src/dbscan_common.hpp. Desde serial.cpp, paralelo1.cpp y paralelo2.cpp selecciono la estrategia. Utilizo scripts separados para generar, validar, medir, auditar y graficar."
     )
     page()
+    # Sección 2: documento P0/P1/P2 y mi interpretación de la consistencia entre bloques.
     heading("2. Paralelización y alcance de P2")
     table(
         [
@@ -174,6 +207,8 @@ def main(root):
         "En P1 elegí reparto estático para reducir coordinación. En P2 utilizo reparto dinámico por bloques para ofrecer más oportunidades de balance. Si k es menor que la cantidad de hilos, sólo k hilos pueden procesar bloques simultáneamente. No instrumenté el tiempo por hilo para atribuir causalidad definitiva a las diferencias."
     )
     page()
+    # Sección 3: reporto el hardware y diseño de la campaña original. Estos textos
+    # son un registro histórico, no una consulta automática al equipo actual.
     heading("3. Entorno y diseño experimental")
     table(
         [
@@ -202,14 +237,21 @@ def main(root):
         "Speedup = media(P0) / media(paralelo). Eficiencia = speedup / hilos. La eficiencia no equivale al porcentaje de uso de CPU. Variar hilos con N fijo evalúa escalabilidad fuerte; variar N no constituye por sí solo una prueba formal de escalabilidad débil."
     )
     page()
+    # Sección 4: construyo la tabla numérica de mejores configuraciones desde summary.csv.
     heading("4. Resultados y variabilidad")
     data = [["N", "Versión", "T / k", "Media ms", "DE ms", "Speedup"]]
+    # Obtengo los tamaños sin duplicados y en orden, y recorro las tres versiones.
     for n in sorted({int(r["n"]) for r in rows}):
         for mode in ["serial", "paralelo1", "paralelo2"]:
+            # Filtro filas por N y versión. max con key elige el mayor speedup observado,
+            # equivalente al menor tiempo medio si la referencia serial es la misma.
+            # No selecciono la repetición más rápida: cada fila ya resume las repeticiones.
             r = max(
                 (r for r in rows if int(r["n"]) == n and r["mode"] == mode),
                 key=lambda r: float(r["speedup"]),
             )
+            # Agrego versión, hilos/k, media, desviación y speedup. Multiplico segundos
+            # por 1000 para expresar ms; :.4f y :.3f controlan decimales de presentación.
             data.append(
                 [
                     n,
@@ -231,6 +273,7 @@ def main(root):
         "No generalizo la mejor configuración a otros equipos, distribuciones o parámetros. En estos datos, la alta densidad permite parada temprana; el crecimiento aproximadamente lineal observado no cambia la complejidad de peor caso."
     )
     page()
+    # Secciones 5 a 7: inserto los tres PNG existentes y sus explicaciones.
     heading("5. Tiempo y escalabilidad")
     figure("tiempo.png")
     p(
@@ -261,6 +304,8 @@ def main(root):
         "Con un hilo el speedup permanece cerca de uno. Con varios hilos, k=2 mantiene una aceleración cercana a dos. Aumentar k hasta 64 mejora el rendimiento medido con 10 hilos. Esto es compatible con mejor balance de carga, aunque no demuestra por sí solo su causa."
     )
     page()
+    # Sección 8: describo evidencia ya obtenida. Generar este PDF no vuelve a
+    # ejecutar las validaciones ni sustituye los scripts que las realizan.
     heading("8. Validación, reproducción y uso de IA")
     p(
         "Utilizo DBSCAN de scikit-learn con algorithm=kd_tree como referencia externa, core_sample_indices_ para cores y labels_=-1 para ruido. Clasifico como borde los no-core restantes. Probé datos del profesor, duplicados, distancia epsilon exacta, aislados, densos, un punto, min_samples mayor que N y vecinos entre bloques: 120 ejecuciones."
@@ -271,12 +316,16 @@ def main(root):
     p(
         "Mediante la auditoría revisé hashes, diez repeticiones distintas por configuración, tiempos finitos y positivos, medias, speedup y eficiencia. Reejecuté las 116 configuraciones y comparé los CSV completos contra P0. Contrasté los datasets grandes con P0; no afirmo validación externa de cada uno con sklearn."
     )
+    # Tomo los conteos de las filas seriales de validation.csv: una por tamaño.
+    # Las versiones paralelas fueron contrastadas con esa referencia en la auditoría.
     table(
         [["N", "Core", "Segundo orden", "Ruido"]]
         + [[r["n"], r["core"], r["border"], r["noise"]] for r in checks if r["mode"] == "serial"],
         [120, 125, 125, 125],
     )
     p("Reproducción limpia", "Heading2")
+    # Exijo que exista el registro de reproducción antes de emitir el informe;
+    # esta condición sólo comprueba su existencia, no verifica su contenido.
     repro = root / "docs/reproduccion_limpia.md"
     if not repro.exists():
         raise RuntimeError("Falta registrar la reproducción limpia antes de emitir el informe")
@@ -290,6 +339,9 @@ def main(root):
         "Archivos de respaldo: docs/metodologia.md, docs/resultados.md, docs/uso_ia.md y results/benchmarks/e5129e76b440779f/{raw.csv,summary.csv,metadata.json,validation.csv}. El PDF fue generado por scripts/generar_informe.py a partir de esos resultados."
     )
 
+    # ReportLab llama a este auxiliar al dibujar cada página. canvas permite
+    # trazar una línea y texto en coordenadas desde la esquina inferior izquierda;
+    # doc.page contiene el número de página actual.
     def footer(canvas, doc):
         canvas.setStrokeColor(colors.HexColor("#D7E0E5"))
         canvas.line(50, 43, 545, 43)
@@ -298,6 +350,8 @@ def main(root):
         canvas.drawString(50, 30, "DBSCAN con OpenMP | Evaluación individual")
         canvas.drawRightString(545, 30, str(doc.page))
 
+    # Configuro tamaño A4, márgenes y metadatos del PDF. build procesa story
+    # y aplica footer tanto en la primera página como en las siguientes.
     SimpleDocTemplate(
         str(out),
         pagesize=A4,
@@ -311,6 +365,8 @@ def main(root):
     print(out)
 
 
+# --root permite indicar otra raíz; por defecto uso la carpeta padre de scripts/.
+# Este bloque se ejecuta al lanzar el archivo, no al importarlo.
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
