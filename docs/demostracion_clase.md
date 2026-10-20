@@ -1,6 +1,6 @@
 # Demostración en clase: DBSCAN con OpenMP
 
-En esta demostración compilo mis tres versiones, compruebo su clasificación y ejecuto una campaña experimental nueva con los cuatro tamaños de mi modalidad individual. Después muestro sus resultados y gráficas. Trabajo en mi Mac y ejecuto los bloques en orden; si un paso falla, reviso el error antes de continuar.
+En esta demostración compilo mis tres versiones, compruebo su clasificación y ejecuto una campaña experimental nueva con los cuatro tamaños de mi modalidad individual. Después muestro sus resultados y gráficas.
 
 ## 1. Preparación antes de clase
 
