@@ -70,6 +70,8 @@ La auditoría exige los ejecutables y datasets cuyos hashes quedaron registrados
 
 ## Documentación
 
+Si recibo un archivo nuevo, sigo el [instructivo para datos del profesor](docs/datos_profesor.md): reviso el CSV, ejecuto las tres versiones sobre sus puntos y compruebo las clasificaciones.
+
 Para mi presentación sigo el [instructivo de demostración en clase](docs/demostracion_clase.md): compilo, compruebo las tres versiones, ejecuto una campaña individual nueva y muestro su auditoría y gráficas.
 
 En [metodologia.md](docs/metodologia.md) explico el algoritmo y la medición. En [alcance_p2.md](docs/alcance_p2.md) justifico P2 frente a la diapositiva 11. También incluyo la [reproducción limpia](docs/reproduccion_limpia.md), el [uso de IA](docs/uso_ia.md) y el [informe PDF](output/pdf/informe_dbscan_openmp.pdf).
