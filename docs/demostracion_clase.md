@@ -29,7 +29,7 @@ mkdir -p results/serial results/paralelo1 results/paralelo2
 
 `-B` obliga a recompilar para mostrar el proceso, aunque ya existan los ejecutables. Obtengo `bin/serial`, `bin/paralelo1` y `bin/paralelo2`. Genero 4000 puntos para una prueba breve y creo los directorios donde escribiré sus clasificaciones.
 
-**Lo que explico:** «Las tres versiones comparten las reglas de clasificación. P0 recorre los puntos secuencialmente; P1 reparte los puntos con OpenMP; P2 reparte k bloques de índices. En P2 mantengo la consulta global de vecinos y una barrera entre las dos fases».
+**Explicación:** «Las tres versiones comparten las reglas de clasificación. P0 recorre los puntos secuencialmente; P1 reparte los puntos con OpenMP; P2 reparte k bloques de índices. En P2 mantengo la consulta global de vecinos y una barrera entre las dos fases».
 
 ## 3. Muestro que las tres versiones clasifican igual
 
@@ -53,7 +53,7 @@ head -n 5 results/paralelo2/4000_results.csv
 
 Si `cmp` encuentra diferencias, no imprime el mensaje de éxito y debo revisar el resultado.
 
-**Lo que explico:** «Comparo las coordenadas y la clase de cada punto, no sólo los totales. Estas ejecuciones individuales muestran el funcionamiento; para comparar rendimiento usaré diez repeticiones».
+**Explicación:** «Comparo las coordenadas y la clase de cada punto, no sólo los totales. Estas ejecuciones individuales muestran el funcionamiento; para comparar rendimiento usaré diez repeticiones».
 
 ## 4. Ejecuto los experimentos completos de mi modalidad individual
 
@@ -91,7 +91,7 @@ VALIDACIÓN CORRECTA: clases 0=ruido, 1=core, 2=segundo orden
 
 Además de las 1160 mediciones registradas, en una campaña nueva sin fallos ejecuta 116 calentamientos descartados, el piloto y las 120 comprobaciones. No cuento esas ejecuciones como repeticiones medidas.
 
-**Lo que explico mientras corre:** «Por cada tamaño comparo 29 configuraciones y repito cada una diez veces. Intercalo el orden con una semilla fija y descarto un calentamiento por configuración. El tiempo registrado lo mide C++ y corresponde al cómputo; no incluye lectura ni escritura del CSV».
+**Explicación mientras corre:** «Por cada tamaño comparo 29 configuraciones y repito cada una diez veces. Intercalo el orden con una semilla fija y descarto un calentamiento por configuración. El tiempo registrado lo mide C++ y corresponde al cómputo; no incluye lectura ni escritura del CSV».
 
 La estimación inicial extrapola el peor caso cuadrático y no supone aceleración paralela. No es una duración garantizada: la parada temprana y el paralelismo pueden hacer que la ejecución real termine mucho antes. Reservo margen para la demostración y no prometo un tiempo fijo.
 
