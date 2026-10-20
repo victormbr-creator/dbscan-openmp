@@ -144,6 +144,17 @@ PY
 
 **Lo que explico:** «La igualdad de los CSV demuestra que mis versiones serial y paralelas producen las mismas clases para cada punto. No basta comparar sólo los totales, y la coincidencia entre versiones no sustituye una referencia externa».
 
+### Visualizo los puntos del profesor
+
+Después de ejecutar P2, utilizo su CSV de salida:
+
+```sh
+.venv/bin/python scripts/visualizar_puntos.py "$OUT/paralelo2.csv"
+open "$OUT/paralelo2_puntos.png"
+```
+
+Veo core en azul, borde en naranja y ruido con cruces rojas, con sus conteos en la leyenda. Todos los puntos se dibujan; algunos pueden superponerse. La gráfica conserva la misma escala en ambos ejes y no recalcula la clasificación. Uso el CSV de resultados de tres columnas, no el archivo original de dos columnas.
+
 ## 6. Si necesito demostrar corrección frente a una referencia externa
 
 Para un conjunto de tamaño manejable, comparo la salida serial con DBSCAN de scikit-learn usando los mismos parámetros. Como ya comprobé que P1 y P2 coinciden con P0, esta comprobación se extiende a las tres salidas.
@@ -186,6 +197,24 @@ cmp "$OUT/serial.csv" "$OUT/paralelo2_t10_k64.csv" && echo "P2 con 10 hilos y 64
 Cambio únicamente la distribución del trabajo. Mantengo el archivo, epsilon y min_samples. Los bloques son rangos de índices; cada punto sigue consultando vecinos de todo el conjunto. La barrera entre fases garantiza que el vector de cores esté completo antes de clasificar los bordes.
 
 Si cambio epsilon o min_samples a petición del profesor, vuelvo a ejecutar las tres versiones con esos nuevos parámetros y comparo las salidas de esa misma configuración.
+
+Para ejecutar sólo una versión y obtener su imagen con mis variables del paso 2, elijo uno de estos bloques:
+
+```sh
+# Sólo P1, con 5 hilos: epsilon y min_samples siguen en las variables acordadas.
+bin/paralelo1 "$INPUT" "$OUT/paralelo1_t5.csv" "$EPS" "$MIN_SAMPLES" 5
+.venv/bin/python scripts/visualizar_puntos.py "$OUT/paralelo1_t5.csv"
+open "$OUT/paralelo1_t5_puntos.png"
+```
+
+```sh
+# Sólo P2, con 10 hilos y 64 bloques.
+bin/paralelo2 "$INPUT" "$OUT/paralelo2_t10_k64.csv" "$EPS" "$MIN_SAMPLES" 10 64
+.venv/bin/python scripts/visualizar_puntos.py "$OUT/paralelo2_t10_k64.csv"
+open "$OUT/paralelo2_t10_k64_puntos.png"
+```
+
+En P1 el último número indica hilos. En P2 los dos últimos indican hilos y bloques, respectivamente. No genero datos sintéticos en este procedimiento: la entrada sigue siendo el CSV del profesor. Puedo consultar ejemplos con imágenes de mis datasets sintéticos y comandos completos en el [apartado 8 del instructivo de clase](demostracion_clase.md#8-ejecuto-una-configuración-particular-y-veo-su-imagen).
 
 Los tiempos individuales sirven para mostrar ejecuciones reales, pero no constituyen una evaluación estadística de rendimiento. Para afirmar una aceleración estable necesito calentamiento y varias repeticiones por configuración, como en mi evaluación original.
 

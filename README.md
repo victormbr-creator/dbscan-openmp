@@ -31,6 +31,17 @@ Los programas aceptan `entrada salida epsilon min_samples [hilos] [k]`. Para evi
 
 Creo los directorios de salida con `mkdir -p`, porque deben existir antes de ejecutar los programas. Excluyo de Git los CSV regenerables de `results/serial/`, `results/paralelo1/` y `results/paralelo2/`. Conservo versionadas las mediciones y auditorías de `results/benchmarks/`.
 
+## Visualización de puntos
+
+Para visualizar los puntos clasificados uso el CSV de salida de C++, que contiene `x,y,clase`:
+
+```sh
+.venv/bin/python scripts/visualizar_puntos.py results/paralelo2/4000_results.csv
+open results/paralelo2/4000_results_puntos.png
+```
+
+La gráfica muestra core en azul, borde en naranja y ruido con cruces rojas. Los colores representan clases, no identificadores de clúster. El script lee las etiquetas existentes, incluye todos los puntos y no ejecuta DBSCAN ni altera las mediciones. Si hay puntos coincidentes pueden superponerse. Puedo indicar otra ruta de imagen con `--output ruta/imagen.png`.
+
 ## Ejecución de experimentos
 
 Para el piloto y la estimación de la matriz individual utilizo:
@@ -80,9 +91,13 @@ Para regenerar el PDF instalo las dependencias documentales opcionales, que no n
 
 ```sh
 .venv/bin/python -m pip install -r requirements-docs.txt
+make all
+.venv/bin/python scripts/generar_figuras_informe.py
 .venv/bin/python scripts/generar_informe.py
 ```
 
-El PDF utiliza las mediciones conservadas y no vuelve a ejecutar los experimentos. Mantengo el material del profesor intacto y excluido de mi repositorio propio.
+El PDF utiliza las mediciones conservadas e incluye una gráfica de clasificación para cada N: 4000, 20000, 80000, 140000 y 200000. `generar_figuras_informe.py` prepara esas cinco imágenes, verifica los datasets originales y compara P2 con P0; elimina sus CSV temporales sin añadir otra campaña experimental. Si ya tengo las imágenes y `output/figuras/clasificacion/resumen.json`, puedo ejecutar sólo `generar_informe.py`. Mantengo el material del profesor intacto y excluido de mi repositorio propio.
 
 Los hashes de fuentes guardados con los experimentos describen el estado de aquella campaña. Incluyen la prueba inicial `src/test_openmp.cpp`, que retiré posteriormente de la entrega y que puedo recuperar del historial de Git. Los cambios de formato posteriores no sustituyen esos registros históricos.
+
+Para elegir una ejecución concreta de P1 o P2, cambiar hilos/particiones y abrir su imagen, utilizo el [apartado de corridas individuales](docs/demostracion_clase.md#8-ejecuto-una-configuración-particular-y-veo-su-imagen).

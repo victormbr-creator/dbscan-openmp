@@ -55,6 +55,17 @@ Si `cmp` encuentra diferencias, no imprime el mensaje de éxito y debo revisar e
 
 **Explicación:** «Comparo las coordenadas y la clase de cada punto, no sólo los totales. Estas ejecuciones individuales muestran el funcionamiento; para comparar rendimiento usaré diez repeticiones».
 
+### Visualizo las clases en el plano
+
+Para visualizar los puntos clasificados uso el CSV de salida de C++, que contiene `x,y,clase`:
+
+```sh
+.venv/bin/python scripts/visualizar_puntos.py results/paralelo2/4000_results.csv
+open results/paralelo2/4000_results_puntos.png
+```
+
+La gráfica muestra core en azul, borde en naranja y ruido con cruces rojas. Los colores representan clases, no identificadores de clúster. El script lee las etiquetas existentes, incluye todos los puntos y no ejecuta DBSCAN ni altera las mediciones. Si hay puntos coincidentes pueden superponerse. Puedo indicar otra ruta de imagen con `--output ruta/imagen.png`.
+
 ## 4. Ejecuto los experimentos completos de mi modalidad individual
 
 ```sh
@@ -189,12 +200,100 @@ Selecciono la menor **media de diez repeticiones**, no la ejecución individual 
 
 **Lo que explico:** «Calculo speedup como tiempo medio serial dividido por tiempo medio paralelo, usando el mismo N. Un speedup de 5 significa que el tiempo paralelo es una quinta parte del serial. La eficiencia es speedup/hilos; no es el porcentaje de uso de CPU. Los valores de hoy pueden diferir de los del informe por las condiciones de ejecución».
 
+## 8. Ejecuto una configuración particular y veo su imagen
+
+Esta sección es independiente de la campaña completa. Elijo un tamaño, una versión y sus parámetros; obtengo un CSV de clasificación y una imagen PNG. El tiempo que aparece en el JSON corresponde a una sola ejecución, no al promedio de diez repeticiones.
+
+### Ejemplo completo: P2 con 200000 puntos, 10 hilos y 64 bloques
+
+```sh
+cd ~/Documents/DBSCAN_Proyecto
+
+# Genero los 200000 puntos sintéticos; omito este paso si ya tengo ese dataset.
+.venv/bin/python scripts/generar_datos.py --n 200000
+
+# Compilo y preparo la carpeta de resultados.
+make all
+mkdir -p results/paralelo2
+
+# P2: entrada, salida, epsilon, min_samples, hilos y bloques.
+bin/paralelo2 data/200000_data.csv results/paralelo2/200000_t10_k64.csv 0.03 10 10 64
+
+# Genero y abro la imagen de esa clasificación.
+.venv/bin/python scripts/visualizar_puntos.py results/paralelo2/200000_t10_k64.csv
+open results/paralelo2/200000_t10_k64_puntos.png
+```
+
+### Ejemplo completo: P1 con 200000 puntos y 5 hilos
+
+```sh
+cd ~/Documents/DBSCAN_Proyecto
+
+# Genero los datos sólo si no están preparados.
+.venv/bin/python scripts/generar_datos.py --n 200000
+make all
+mkdir -p results/paralelo1
+
+# P1: entrada, salida, epsilon, min_samples e hilos; no utiliza k.
+bin/paralelo1 data/200000_data.csv results/paralelo1/200000_t5.csv 0.03 10 5
+
+.venv/bin/python scripts/visualizar_puntos.py results/paralelo1/200000_t5.csv
+open results/paralelo1/200000_t5_puntos.png
+```
+
+### Qué modifico para cambiar la configuración
+
+| Parámetro | Dónde lo cambio | Ejemplo |
+| --- | --- | --- |
+| Cantidad de puntos N | `--n` y el archivo de entrada correspondiente | `80000` y `data/80000_data.csv` |
+| Versión | Ejecutable y carpeta de salida | `bin/paralelo1` o `bin/paralelo2` |
+| Epsilon | Primer número después del archivo de salida | `0.03` |
+| min_samples | Segundo número después del archivo de salida | `10`, incluido el propio punto |
+| Hilos | Tercer número después del archivo de salida | `1`, `5`, `10` o `20` |
+| Particiones k | Cuarto número; sólo en P2 | `2`, `4`, `8`, `16`, `32` o `64` |
+| Salida | Ruta CSV y después esa misma ruta al visualizar | Incluyo N, hilos y k en el nombre para distinguir pruebas. |
+
+Para el serial utilizo `bin/serial entrada.csv salida.csv epsilon min_samples`, sin hilos ni particiones. En todos los casos `visualizar_puntos.py` recibe el CSV **de salida con tres columnas**, no el de entrada con dos. Si repito una ruta de salida, reemplazo su resultado anterior. La imagen predeterminada queda junto al CSV y termina en `_puntos.png`.
+
+Para comparar P1 y P2 con sentido mantengo el mismo dataset, epsilon y min_samples. Si sólo cambio hilos o particiones, las clases deben conservarse. Si cambio epsilon o min_samples, la clasificación puede cambiar legítimamente.
+
+**Con datos entregados por el profesor no ejecuto el generador:** sustituyo la entrada por su CSV y sigo [el instructivo para datos externos](datos_profesor.md).
+
+### Referencia visual: una imagen por tamaño
+
+Las siguientes imágenes pertenecen a mis datos sintéticos con epsilon=0.03 y min_samples=10. Core aparece en azul, borde con triángulos naranjas y ruido con cruces rojas. Los colores no son identificadores de clúster. Se incluyen todos los puntos; algunos pueden superponerse.
+
+**4000 puntos:**
+
+![Clasificación de 4000 puntos](../output/figuras/clasificacion/4000_puntos.png)
+
+**200000 puntos:**
+
+![Clasificación de 200000 puntos](../output/figuras/clasificacion/200000_puntos.png)
+
+También puedo abrir las imágenes de [20000](../output/figuras/clasificacion/20000_puntos.png), [80000](../output/figuras/clasificacion/80000_puntos.png) y [140000 puntos](../output/figuras/clasificacion/140000_puntos.png). El PDF incluye las cinco, una por tamaño, sin duplicarlas por versión, hilos o particiones.
+
+### Regenero las cinco imágenes del informe y su PDF
+
+```sh
+cd ~/Documents/DBSCAN_Proyecto
+make all
+.venv/bin/python scripts/generar_figuras_informe.py
+.venv/bin/python scripts/generar_informe.py
+open output/pdf/informe_dbscan_openmp.pdf
+```
+
+El PDF requiere las dependencias de `requirements-docs.txt`, que preparo antes de clase si faltan. El generador de figuras crea los datasets sintéticos que no existan, comprueba sus hashes contra las campañas originales y compara P2 con P0 para los cinco tamaños. Guarda únicamente una imagen por tamaño y un pequeño `resumen.json` con parámetros, conteos y hashes; los CSV intermedios son temporales y se eliminan al terminar.
+
+No ejecuta otra campaña de 1160 mediciones. Si ya tengo las cinco imágenes y su resumen, puedo regenerar únicamente el PDF. Los nombres son estables para reemplazar esas imágenes sin acumular carpetas nuevas. El PDF conserva las mediciones históricas y agrega la clasificación visual como una sección aparte.
+
+
 ## Qué archivos se generan
 
 - Los datos en `data/` y las clasificaciones de 4000 puntos se regeneran; están excluidos de Git.
 - La campaña nueva se guarda en su propia carpeta de `results/benchmarks/`: `metadata.json`, `raw.csv` y `summary.csv`.
 - La auditoría agrega `validation.csv` y el generador de gráficas agrega tres PNG.
-- El PDF entregado sigue mostrando la campaña histórica. No ejecuto `generar_informe.py` para mostrar resultados nuevos: ese script está vinculado a la campaña original.
+- El PDF conserva las mediciones de la campaña histórica e incluye cinco imágenes de clasificación en `output/figuras/clasificacion/`. Los tiempos de una corrida nueva no se incorporan automáticamente al PDF.
 
 Las mediciones nuevas permanecen locales hasta que decida agregarlas a Git. Para presentar los resultados del día uso la carpeta que imprimió el comando y sus gráficas.
 

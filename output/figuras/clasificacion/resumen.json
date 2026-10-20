@@ -1,0 +1,68 @@
+{
+  "epsilon": 0.03,
+  "min_samples": 10,
+  "mode": "paralelo2",
+  "threads": 10,
+  "k": 64,
+  "binaries": {
+    "serial": "ae3736ec23d99998f31422932bd7eb1f76f1e0a66916251f3ac50f8861091422",
+    "paralelo2": "c8f862d9d004c51fb358f79399dca403671a458c0343f3f8659a7f85b7b8f8c2"
+  },
+  "figures": [
+    {
+      "n": 4000,
+      "core": 3829,
+      "border": 112,
+      "noise": 59,
+      "image": "4000_puntos.png",
+      "image_sha256": "c56c7846f2bc82c575c11979034c54cc6b54d9a914bf740eda310b12b460b0ba",
+      "dataset_sha256": "5ea8740e60ce2dee1f83aea97abf14a40397c011416b35d48178370f16027d9c",
+      "classification_sha256": "3b72dbca3423b78b8d2fb3cf4779f4fdbb9a5763c8a286aa9f9ffb3b0e5c87e0",
+      "matches_serial": true
+    },
+    {
+      "n": 20000,
+      "core": 19866,
+      "border": 89,
+      "noise": 45,
+      "image": "20000_puntos.png",
+      "image_sha256": "fa55fdab5509294142c9f28a95b98629742386abf6067b4d18da5d1f15eeeb56",
+      "dataset_sha256": "c8992228d010bc7d2c94a8913ccf7100ec7e390fe2fff16fc935c0ba11807086",
+      "classification_sha256": "b2f5e33f26598f61f0bffeb3354177979e11c1b3e0024ec60f86bdc7b4254097",
+      "matches_serial": true
+    },
+    {
+      "n": 80000,
+      "core": 79885,
+      "border": 81,
+      "noise": 34,
+      "image": "80000_puntos.png",
+      "image_sha256": "089ca2280ead569f2f1a81d03376404825379c7c3ebe30a62c5a08bf72e381f3",
+      "dataset_sha256": "de04236a2ba9ac73add67680fd30f835fb5f6574d672514858b94ef45a29028b",
+      "classification_sha256": "d23b035b73f87df733130937723fa104798f3b05d35a42de44b31c67856d4679",
+      "matches_serial": true
+    },
+    {
+      "n": 140000,
+      "core": 139896,
+      "border": 69,
+      "noise": 35,
+      "image": "140000_puntos.png",
+      "image_sha256": "abf4cb915fc81a9b9470a48302b504843c8ac6e34b2166cc7d537da4c357984d",
+      "dataset_sha256": "8794928170b46eb4688d082b114cc74cb8b6b8bfd1b3c1b507ed6658870306ed",
+      "classification_sha256": "7dd29b07c33cd2cc13c5f1ab6e50a6f0f755eef2f0dacae1880842579765b92d",
+      "matches_serial": true
+    },
+    {
+      "n": 200000,
+      "core": 199902,
+      "border": 77,
+      "noise": 21,
+      "image": "200000_puntos.png",
+      "image_sha256": "252349da9ad3fdf08a0c5d5ed33db7d2859e7a7ae5fe21d7644dd5e16aab35f4",
+      "dataset_sha256": "cc34e37ce7a92b67f350c4cde8d3258e8418f8812dde4a4c8ead2041a4cc9fb6",
+      "classification_sha256": "fd0e7c047f1f038ff5753cde5c7cb207ce87697ebb56ce73d7ea7e2af5cab009",
+      "matches_serial": true
+    }
+  ]
+}

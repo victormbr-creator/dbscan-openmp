@@ -4,7 +4,7 @@
 # párrafos, tablas e imágenes. escape protege el texto de celdas frente a
 # caracteres que Paragraph podría interpretar como etiquetas.
 from pathlib import Path
-import argparse, csv, json
+import argparse, csv, hashlib, json
 from xml.sax.saxutils import escape
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -112,7 +112,7 @@ def main(root):
     p("DBSCAN paralelo<br/>para detección de ruido", "TitleCustom")
     p("Descripción técnica y evaluación experimental individual", "Sub")
     p(
-        "Proyecto: victormbr-creator/dbscan-openmp<br/>Fecha de revisión: 19 de octubre de 2026<br/>Entrega indicada: 20 de octubre de 2026"
+        "Proyecto: victormbr-creator/dbscan-openmp<br/>Fecha de revisión: 20 de octubre de 2026<br/>Entrega indicada: 20 de octubre de 2026"
     )
     story.append(Spacer(1, 20))
     table(
@@ -338,6 +338,49 @@ def main(root):
     p(
         "Archivos de respaldo: docs/metodologia.md, docs/resultados.md, docs/uso_ia.md y results/benchmarks/e5129e76b440779f/{raw.csv,summary.csv,metadata.json,validation.csv}. El PDF fue generado por scripts/generar_informe.py a partir de esos resultados."
     )
+
+    # Incluyo una sola imagen por tamaño; las etiquetas de P2 se comprobaron contra P0.
+    # Leo imágenes ya generadas, sin añadir ni sustituir tiempos experimentales.
+    image_folder = root / "output/figuras/clasificacion"
+    manifest = json.loads((image_folder / "resumen.json").read_text())
+    if ([item["n"] for item in manifest["figures"]] != [4000, 20000, 80000, 140000, 200000]
+            or manifest["epsilon"] != 0.03 or manifest["min_samples"] != 10
+            or manifest["mode"] != "paralelo2" or manifest["threads"] != 10 or manifest["k"] != 64):
+        raise ValueError("Las figuras no corresponden a los tamaños y parámetros del informe.")
+    for index, item in enumerate(manifest["figures"], start=1):
+        page()
+        n = item["n"]
+        heading(f"9.{index}. Clasificación visual: {n:,} puntos")
+        p(
+            "Muestro una imagen por tamaño con epsilon=0.03 y min_samples=10. "
+            "Utilicé P2 con 10 hilos y 64 bloques y comprobé igualdad del CSV completo "
+            "contra P0. Los colores indican clases, no identificadores de clúster."
+        )
+        if n == 4000:
+            p("Incluyo 4000 puntos como caso de demostración; no es un tamaño de la campaña final de rendimiento.")
+        else:
+            p("Este tamaño pertenece a la evaluación individual. Conservo los datos originales verificados por su hash.")
+        image_path = image_folder / item["image"]
+        if not item["matches_serial"] or hashlib.sha256(image_path.read_bytes()).hexdigest() != item["image_sha256"]:
+            raise ValueError("Falta verificar la clasificación o cambió la imagen del informe.")
+        # Mantengo la proporción del PNG para no deformar los ejes del gráfico.
+        picture = Image(str(image_path))
+        picture.drawHeight = 495 * picture.imageHeight / picture.imageWidth
+        picture.drawWidth = 495
+        story.append(picture)
+        story.append(Spacer(1, 12))
+        table(
+            [["Puntos", "Core (1)", "Borde (2)", "Ruido (0)"]]
+            + [[n, item["core"], item["border"], item["noise"]]],
+            [120, 125, 125, 125],
+        )
+        p(
+            f"Figura {index + 3}. Clasificación de los {n:,} puntos completos: "
+            "core en azul, borde con triángulos naranjas y ruido con cruces rojas. "
+            "No submuestreo; algunos puntos se superponen. Mantengo la misma escala "
+            "en ambos ejes. Estas imágenes complementan los resultados, sin añadir "
+            "mediciones a la campaña histórica."
+        )
 
     # ReportLab llama a este auxiliar al dibujar cada página. canvas permite
     # trazar una línea y texto en coordenadas desde la esquina inferior izquierda;
