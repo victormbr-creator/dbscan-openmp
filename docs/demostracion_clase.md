@@ -4,8 +4,6 @@ En esta demostración compilo mis tres versiones, compruebo su clasificación y 
 
 ## 1. Preparación antes de clase
 
-Llevo el proyecto y sus dependencias instaladas. Conecto el equipo a la corriente, evito que entre en reposo y cierro tareas pesadas para reducir interferencias durante las mediciones. No necesito conexión a Internet para ejecutar la demostración con el entorno ya preparado.
-
 Abro Terminal y compruebo el entorno:
 
 ```sh
