@@ -1,6 +1,6 @@
 # Evaluación experimental individual
 
-En este informe reporto la campaña del 15 de octubre de 2026: **116 configuraciones, diez repeticiones cada una, 1160 mediciones válidas, cero fallas y cero configuraciones incompletas**. N={20000,80000,140000,200000}, T={1,5,10,20}, k={2,4,8,16,32,64}; epsilon=0.03, min_samples=10. Conservo todas las configuraciones y mediciones, incluidas las menos favorables.
+En este informe reporto la campaña del 15 de octubre de 2026: **116 configuraciones, diez repeticiones cada una, 1160 mediciones válidas. N={20000,80000,140000,200000}, T={1,5,10,20}, k={2,4,8,16,32,64}; epsilon=0.03, min_samples=10. Conservo todas las configuraciones y mediciones, incluidas las menos favorables.
 
 Archivos: [tiempos individuales](../results/benchmarks/e5129e76b440779f/raw.csv), [resumen](../results/benchmarks/e5129e76b440779f/summary.csv), [metadatos](../results/benchmarks/e5129e76b440779f/metadata.json), [validación](../results/benchmarks/e5129e76b440779f/validation.csv).
 
