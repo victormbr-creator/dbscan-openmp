@@ -1,5 +1,3 @@
-"""Genero una imagen de clasificación por tamaño para el informe, sin medir otra campaña."""
-
 import hashlib
 import json
 import subprocess
@@ -17,8 +15,6 @@ def sha(path):
 
 
 def main():
-    # Compruebo los datos contra los hashes originales del piloto y del informe.
-    # Así no incorporo accidentalmente un dataset diferente bajo el mismo nombre.
     hashes = {}
     for campaign in ["500407211dbe89c8", "e5129e76b440779f"]:
         meta = json.loads((ROOT / "results/benchmarks" / campaign / "metadata.json").read_text())
@@ -27,7 +23,7 @@ def main():
     destination = ROOT / "output/figuras/clasificacion"
     destination.mkdir(parents=True, exist_ok=True)
     figures = []
-    # Los CSV intermedios se eliminan al salir; sólo conservo cinco PNG y su resumen.
+
     with tempfile.TemporaryDirectory() as tmp:
         for n in SIZES:
             data = ROOT / "data" / f"{n}_data.csv"
@@ -39,7 +35,7 @@ def main():
             outputs = {}
             for mode in ["serial", "paralelo2"]:
                 output = Path(tmp) / f"{n}_{mode}.csv"
-                # Mantengo epsilon=0.03 y min_samples=10; P2 usa 10 hilos y 64 bloques.
+
                 command = [str(ROOT / "bin" / mode), str(data), str(output), "0.03", "10"]
                 if mode == "paralelo2":
                     command += ["10", "64"]
@@ -49,26 +45,26 @@ def main():
                     raise ValueError("La ejecución no coincide con la configuración solicitada.")
                 outputs[mode] = output
 
-            # Exijo igualdad de todas las coordenadas y clases entre P0 y P2.
             if outputs["serial"].read_bytes() != outputs["paralelo2"].read_bytes():
                 raise ValueError(f"Las clasificaciones P0 y P2 difieren para N={n}.")
             name = f"{n}_puntos.png"
             visualizar(outputs["paralelo2"], destination / name)
-            # No registro los tiempos de estas ejecuciones en la campaña experimental.
-            figures.append({
-                "n": n,
-                "core": info["core"],
-                "border": info["border"],
-                "noise": info["noise"],
-                "image": name,
-                "image_sha256": sha(destination / name),
-                "dataset_sha256": hashes[str(n)],
-                "classification_sha256": sha(outputs["paralelo2"]),
-                "matches_serial": True,
-            })
+
+            figures.append(
+                {
+                    "n": n,
+                    "core": info["core"],
+                    "border": info["border"],
+                    "noise": info["noise"],
+                    "image": name,
+                    "image_sha256": sha(destination / name),
+                    "dataset_sha256": hashes[str(n)],
+                    "classification_sha256": sha(outputs["paralelo2"]),
+                    "matches_serial": True,
+                }
+            )
             print(f"N={n}: imagen generada y clasificación idéntica a P0.", flush=True)
 
-    # Este resumen permite construir las leyendas del PDF y verificar sus imágenes.
     manifest = {
         "epsilon": 0.03,
         "min_samples": 10,

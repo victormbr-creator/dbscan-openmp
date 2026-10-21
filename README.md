@@ -67,6 +67,20 @@ Para generar gráficas utilizo la carpeta de la campaña elegida, sustituyendo `
 .venv/bin/python scripts/graficas.py results/benchmarks/ID/summary.csv
 ```
 
+## Comparación con el CSV del profesor
+
+Para medir el mismo archivo con P0, P1 con cuatro hilos y P2 con cuatro hilos y cuatro particiones, utilizo:
+
+```sh
+make all
+COMPARE_DIR="results/datos_profesor/comparacion_$(date +%Y%m%d_%H%M%S)"
+.venv/bin/python scripts/comparar_profesor.py data/datos_profesor.csv \
+  --epsilon 0.03 --min-samples 10 --repetitions 10 --output-dir "$COMPARE_DIR"
+open "$COMPARE_DIR/serial_puntos.png" "$COMPARE_DIR/paralelo1_puntos.png" "$COMPARE_DIR/paralelo2_puntos.png"
+```
+
+El script lee el archivo recibido sin regenerarlo, compara las clasificaciones y guarda tiempos individuales, promedios, speedups y tres imágenes con sus métricas. Conservo una demostración de 100000 puntos en [output/comparacion_profesor/resultado.md](output/comparacion_profesor/resultado.md). Los comandos y las tres gráficas están en [el instructivo](docs/datos_profesor.md).
+
 ## Evaluación reportada
 
 En el informe reporto la campaña `results/benchmarks/e5129e76b440779f`, realizada el 15 de octubre de 2026: 116 configuraciones y 1160 mediciones válidas, sin fallas. Mantengo sus resultados en [docs/resultados.md](docs/resultados.md), sin mezclarlos con campañas posteriores.

@@ -1,0 +1,21 @@
+{
+  "created_at": "2026-10-20T18:27:12.205687-06:00",
+  "input": "/Users/victormanuelbenitezrenteria/Documents/DBSCAN_Proyecto/data/datos_profesor.csv",
+  "input_sha256": "b820cf79af9629c53223eadff121dc3759b8a1410ab698a482981a1a0c632e64",
+  "n": 100000,
+  "epsilon": 0.03,
+  "min_samples": 10,
+  "repetitions": 10,
+  "seed": 11,
+  "warmups_per_configuration": 1,
+  "binaries": {
+    "serial": "ae3736ec23d99998f31422932bd7eb1f76f1e0a66916251f3ac50f8861091422",
+    "paralelo1": "f84dd60e2d1927faf63ae1d177a17cc4dacc9d4452d52ff585db92454c3ebe7f",
+    "paralelo2": "c8f862d9d004c51fb358f79399dca403671a458c0343f3f8659a7f85b7b8f8c2"
+  },
+  "noise": 92,
+  "core": 99773,
+  "border": 135,
+  "classification_equal": true,
+  "measured_region": "Cómputo C++; excluye lectura, escritura y gráficas"
+}

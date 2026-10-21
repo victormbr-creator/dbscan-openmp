@@ -35,11 +35,11 @@ mkdir -p results/serial results/paralelo1 results/paralelo2
 
 ```sh
 bin/serial data/4000_data.csv results/serial/4000_results.csv 0.03 10
-bin/paralelo1 data/4000_data.csv results/paralelo1/4000_results.csv 0.03 10 5
-bin/paralelo2 data/4000_data.csv results/paralelo2/4000_results.csv 0.03 10 5 16
+bin/paralelo1 data/4000_data.csv results/paralelo1/4000_results.csv 0.03 10 4
+bin/paralelo2 data/4000_data.csv results/paralelo2/4000_results.csv 0.03 10 4 4
 ```
 
-Los argumentos son entrada, salida, epsilon y min_samples; en las versiones paralelas añado hilos y, para P2, particiones. En este ejemplo uso epsilon=0.03, min_samples=10, cinco hilos y 16 bloques en P2.
+Los argumentos son entrada, salida, epsilon y min_samples; en las versiones paralelas añado hilos y, para P2, particiones. En este ejemplo uso epsilon=0.03, min_samples=10, cuatro hilos y cuatro bloques en P2.
 
 Cada programa imprime un JSON. Para estos datos espero `n=4000`, `noise=59`, `core=3829` y `border=112` en las tres versiones. Los tiempos pueden variar. El CSV guarda `x,y,clase`, con `0=ruido`, `1=core` y `2=borde`.
 
@@ -55,16 +55,24 @@ Si `cmp` encuentra diferencias, no imprime el mensaje de éxito y debo revisar e
 
 **Explicación:** «Comparo las coordenadas y la clase de cada punto, no sólo los totales. Estas ejecuciones individuales muestran el funcionamiento; para comparar rendimiento usaré diez repeticiones».
 
-### Visualizo las clases en el plano
+### Muestro las tres versiones con sus tiempos y speedups
 
-Para visualizar los puntos clasificados uso el CSV de salida de C++, que contiene `x,y,clase`:
+Para obtener una gráfica de P0, otra de P1 con 4 hilos y otra de P2 con 4 hilos y 4 particiones sobre los 4000 puntos, ejecuto:
 
 ```sh
-.venv/bin/python scripts/visualizar_puntos.py results/paralelo2/4000_results.csv
-open results/paralelo2/4000_results_puntos.png
+COMPARE_DIR="results/comparacion_clase/$(date +%Y%m%d_%H%M%S)"
+.venv/bin/python scripts/comparar_profesor.py data/4000_data.csv \
+  --epsilon 0.03 --min-samples 10 --repetitions 10 --output-dir "$COMPARE_DIR"
+open "$COMPARE_DIR/serial_puntos.png" \
+     "$COMPARE_DIR/paralelo1_puntos.png" \
+     "$COMPARE_DIR/paralelo2_puntos.png"
 ```
 
-La gráfica muestra core en azul, borde en naranja y ruido con cruces rojas. Los colores representan clases, no identificadores de clúster. El script lee las etiquetas existentes, incluye todos los puntos y no ejecuta DBSCAN ni altera las mediciones. Si hay puntos coincidentes pueden superponerse. Puedo indicar otra ruta de imagen con `--output ruta/imagen.png`.
+El script imprime una tabla de tiempos medios y speedups. Cada imagen muestra la configuración, el tiempo medio y el speedup en su título. Realiza 30 mediciones y tres calentamientos descartados; comprueba que las tres clasificaciones coinciden y guarda `raw.csv`, `summary.csv`, `metadata.json` y `resultado.md` junto con las imágenes.
+
+Si el profesor me entrega otro CSV, sustituyo `data/4000_data.csv` por la ruta de ese archivo y ajusto epsilon/min_samples. No ejecuto el generador sobre sus datos. En el [instructivo para datos del profesor](datos_profesor.md#muestro-las-tres-gráficas-los-tiempos-y-los-speedups) incluyo el procedimiento completo y las tres imágenes de mi prueba de 100000 puntos, con sus tiempos y speedups.
+
+Estas tres configuraciones de demostración son independientes de la matriz experimental de la siguiente sección, que conserva los hilos 1, 5, 10 y 20 de mi evaluación original. Los colores de las imágenes representan core, borde y ruido; no identificadores de clúster. Todos los puntos se dibujan, aunque algunos se superpongan.
 
 ## 4. Ejecuto los experimentos completos de mi modalidad individual
 

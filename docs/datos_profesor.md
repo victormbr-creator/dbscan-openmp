@@ -35,8 +35,8 @@ make all
 INPUT="data/datos_profesor.csv"
 EPS="0.03"
 MIN_SAMPLES="10"
-THREADS="5"
-PARTITIONS="16"
+THREADS="4"
+PARTITIONS="4"
 OUT="results/datos_profesor/$(date +%Y%m%d_%H%M%S)"
 
 mkdir -p "$OUT"
@@ -144,16 +144,72 @@ PY
 
 **Lo que explico:** «La igualdad de los CSV demuestra que mis versiones serial y paralelas producen las mismas clases para cada punto. No basta comparar sólo los totales, y la coincidencia entre versiones no sustituye una referencia externa».
 
-### Visualizo los puntos del profesor
+### Muestro las tres gráficas, los tiempos y los speedups
 
-Después de ejecutar P2, utilizo su CSV de salida:
+Comparo exactamente estas configuraciones sobre el mismo CSV y con el mismo epsilon y min_samples:
+
+| Versión | Hilos | Particiones |
+| --- | ---: | ---: |
+| P0 serial | 1 | No aplica |
+| P1 paralelo1 | 4 | No aplica |
+| P2 paralelo2 | 4 | 4 |
+
+Después de preparar las variables del paso 2, ejecuto:
 
 ```sh
-.venv/bin/python scripts/visualizar_puntos.py "$OUT/paralelo2.csv"
-open "$OUT/paralelo2_puntos.png"
+.venv/bin/python scripts/comparar_profesor.py "$INPUT" \
+  --epsilon "$EPS" --min-samples "$MIN_SAMPLES" \
+  --repetitions 10 --output-dir "$OUT/comparacion"
+
+open "$OUT/comparacion/serial_puntos.png" \
+     "$OUT/comparacion/paralelo1_puntos.png" \
+     "$OUT/comparacion/paralelo2_puntos.png"
 ```
 
-Veo core en azul, borde en naranja y ruido con cruces rojas, con sus conteos en la leyenda. Todos los puntos se dibujan; algunos pueden superponerse. La gráfica conserva la misma escala en ambos ejes y no recalcula la clasificación. Uso el CSV de resultados de tres columnas, no el archivo original de dos columnas.
+Este script tiene fijadas las tres configuraciones de la tabla; no toma hilos o particiones de otras variables de la terminal. Descarta un calentamiento por configuración, comprueba igualdad punto a punto contra P0 e intercala diez repeticiones por versión: **30 mediciones nuevas, más tres calentamientos**. No recupera los tiempos de los CSV de clasificación anteriores ni genera otros datos.
+
+Al terminar imprime una tabla con tiempo medio, desviación estándar, speedup y eficiencia. Las tres imágenes también incluyen el nombre de la versión, los hilos, k cuando corresponde, el tiempo medio y el speedup. Es normal que los puntos se vean iguales: las clases deben coincidir; la comparación de rendimiento está en los títulos y la tabla.
+
+- `raw.csv`: tiempo de cada repetición, en segundos.
+- `summary.csv`: media, desviación estándar, speedup y eficiencia por versión.
+- `metadata.json`: archivo utilizado, parámetros, conteos y hashes.
+- `resultado.md`: tabla y las tres imágenes en un solo documento.
+- Tres PNG: una gráfica de clasificación por versión. Los CSV intermedios se eliminan automáticamente.
+
+Calculo **speedup = media serial / media de la versión** y **eficiencia = speedup / hilos**. Son tiempos internos de cómputo; no incluyen lectura, escritura ni generación de las imágenes. No comparo estos tiempos con los de otro archivo o con parámetros distintos.
+
+Para consultar después los valores guardados, sin volver a ejecutar:
+
+```sh
+cat "$OUT/comparacion/summary.csv"
+```
+
+Si vuelvo a usar la misma carpeta, el script pide elegir otra o añadir `--overwrite`; esa opción reemplaza los resultados de la comparación en esa carpeta. Si falla, reviso el error y no presento una salida parcial o antigua como una medición nueva.
+
+### Ejemplo medido con el archivo de 100000 puntos
+
+Las siguientes imágenes son la comparación realizada el 20 de octubre de 2026 con `data/datos_profesor.csv`, epsilon=0.03 y min_samples=10. Son una referencia de mi prueba actual; si recibo otro archivo, ejecuto el comando anterior y presento las imágenes y tiempos de la nueva carpeta.
+
+| Versión | Hilos | k | Media (ms) | DE (ms) | Speedup | Eficiencia |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| P0: serial | 1 | - | 80.227 | 0.501 | 1.000× | 100.00% |
+| P1: 4 hilos | 4 | - | 23.120 | 0.308 | 3.470× | 86.75% |
+| P2: 4 hilos, 4 particiones | 4 | 4 | 22.575 | 0.173 | 3.554× | 88.84% |
+
+DE es la desviación estándar muestral de las diez repeticiones. Estos valores no sustituyen la campaña histórica del informe PDF. La evidencia de esta comparación está en [resultado.md](../output/comparacion_profesor/resultado.md), [raw.csv](../output/comparacion_profesor/raw.csv) y [summary.csv](../output/comparacion_profesor/summary.csv).
+
+**P0 serial:**
+
+![P0 serial: clasificación, tiempo medio y speedup](../output/comparacion_profesor/serial_puntos.png)
+
+**P1 con 4 hilos:**
+
+![P1 con 4 hilos: clasificación, tiempo medio y speedup](../output/comparacion_profesor/paralelo1_puntos.png)
+
+**P2 con 4 hilos y 4 particiones:**
+
+![P2 con 4 hilos y 4 particiones: clasificación, tiempo medio y speedup](../output/comparacion_profesor/paralelo2_puntos.png)
+
 
 ## 6. Si necesito demostrar corrección frente a una referencia externa
 
@@ -220,7 +276,7 @@ Los tiempos individuales sirven para mostrar ejecuciones reales, pero no constit
 
 ## Qué scripts utilizo en este reto
 
-Para el archivo del profesor utilizo directamente `bin/serial`, `bin/paralelo1` y `bin/paralelo2`, más los bloques de comprobación anteriores.
+Para el archivo del profesor utilizo `bin/serial`, `bin/paralelo1` y `bin/paralelo2`. Para obtener las tres gráficas con tiempos y speedups utilizo `comparar_profesor.py`, que ejecuta esas versiones con las configuraciones 1 hilo, 4 hilos y 4 hilos/4 particiones, respectivamente.
 
 **No ejecuto `generar_datos.py` sobre el nombre del archivo recibido ni utilizo `experimentos.py --sizes N` para medirlo.** El primero genera datos sintéticos y el segundo también genera sus propios CSV por tamaño: indicar el mismo N no hace que use el archivo del profesor. Por eso doy al CSV recibido un nombre propio y conservo el original.
 
